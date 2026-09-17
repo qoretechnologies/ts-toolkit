@@ -92,7 +92,7 @@
     "storybook-addon-outline": "^1.4.2",
     "storybook-dark-mode": "^1.1.2",
     "ts-file-parser": "^0.0.21",
-    "ts-jest": "^28.0.8",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.1",
     "typedoc": "^0.23.10",
     "typedoc-json-parser": "^7.0.2",
