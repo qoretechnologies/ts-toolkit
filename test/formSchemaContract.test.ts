@@ -35,7 +35,8 @@ interface IDiagnostic {
 const diagnose = (cases: ICase[]): Record<string, IDiagnostic[]> => {
   const header = [
     "import type { IQorusFormSchema, TQorusFormFieldSchema, TQorusType as TUiType } from '../src';",
-    'export type TUnused = TUiType | TQorusFormFieldSchema;',
+    "import type { IQorusExpressionSchema, TQorusExpressionSchemaArg } from '../src';",
+    'export type TUnused = TUiType | TQorusFormFieldSchema | IQorusExpressionSchema | TQorusExpressionSchemaArg;',
     // A consumer registers its own editor through the package entry point,
     // as the IDE does.
     "declare module '../src' {",
@@ -220,6 +221,135 @@ const INVALID: (ICase & { control: string })[] = [
   },
 ];
 
+/**
+ * Entries of the expression catalogue, `GET /system?action=expressions&context=ui`
+ * (qorus `SystemRestClassV8::argInfo()` over Qore's `DataProviderExpressionInfo`
+ * and `DataProviderArgInfo`). Each is taken from a live instance's answer.
+ */
+const VALID_EXPRESSIONS: ICase[] = [
+  {
+    name: 'an expression with every field the server sends',
+    source: [
+      'const ea: IQorusExpressionSchema = {',
+      "  type: 1, subtype: 1, name: 'starts-with', display_name: 'String Starts With',",
+      "  short_desc: 'Returns `True` if the given value starts with the given characters',",
+      "  desc: 'Returns `True` if the given value starts with the given characters', symbol: 'startsWith',",
+      "  groups: ['Comparison'], role: 3, supports_pushdown: true,",
+      "  render_template: '$arg[0].startsWith($arg[1], $arg[2])',",
+      "  args: [], return_type: 'bool', ui_return_type: 'bool', varargs: false,",
+      '};',
+    ].join('\n'),
+  },
+  {
+    // Qore's `DataProviderExpressionInfo.supports_pushdown` (DataProvider 3.5).
+    name: 'an expression the backend cannot run itself',
+    source:
+      "const eb: IQorusExpressionSchema = { type: 2, subtype: 1, name: 'f', display_name: 'F', short_desc: 'f', desc: 'f', symbol: 'f', role: 3, supports_pushdown: false, args: [], return_type: 'auto', ui_return_type: 'any', varargs: false };",
+  },
+  {
+    // `return_type` is the server's type name; `list` and `hash` carry their
+    // element type (`ui_return_type` is the plain UI type).
+    name: 'an expression that returns a list or a hash',
+    source: [
+      "const ec: IQorusExpressionSchema = { type: 2, subtype: 1, name: 'split', display_name: 'Split', short_desc: 's', desc: 's', symbol: 'split', role: 3, args: [], return_type: 'list<auto>', ui_return_type: 'list', varargs: false };",
+      "const ed: IQorusExpressionSchema['return_type'] = 'hash<auto>';",
+    ].join('\n'),
+  },
+  {
+    name: 'a logic group',
+    source:
+      "const ee: IQorusExpressionSchema = { type: 1, subtype: 2, name: '&&', display_name: 'And', short_desc: 'a', desc: 'a', symbol: '&&', role: 3, args: [], return_type: 'bool', ui_return_type: 'bool', varargs: true, min_args: 2 };",
+  },
+  {
+    // `required` is sent only when it is true.
+    name: 'an optional argument',
+    source:
+      "const aa: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'string', ui_type: 'richtext', display_name: 'Options', short_desc: 'o', desc: 'o', sensitive: false };",
+  },
+  {
+    // The `value` and `template` expressions declare no `arg_info`, so their
+    // argument carries only what the signature gives.
+    name: 'an argument with no description',
+    source:
+      "const ab: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'any', ui_type: 'any', required: true };",
+  },
+  {
+    name: 'an argument with a default',
+    source: [
+      'const ac: TQorusExpressionSchemaArg = {',
+      "  signature_type_code: 'any', name: 'bool', ui_type: 'bool', display_name: 'Ignore Case?',",
+      "  short_desc: 'If True then case will be ignored', desc: 'If `True` then case will be ignored',",
+      "  default_value: true, sensitive: false, required: true, ui_default_value: { type: 'bool', value: true },",
+      '};',
+    ].join('\n'),
+  },
+  {
+    name: 'an argument with allowed values',
+    source: [
+      'const ad: TQorusExpressionSchemaArg = {',
+      "  signature_type_code: 'any', name: 'string', ui_type: 'richtext', display_name: 'Options',",
+      "  short_desc: 'o', desc: 'o', sensitive: false, allowed_values_creatable: false,",
+      "  allowed_values: [{ display_name: 'Dot Matches Newline?', short_desc: 'd', desc: 'd', value: { type: 'richtext', value: 'RE_DotAll' } }],",
+      '};',
+    ].join('\n'),
+  },
+  {
+    name: 'a list argument',
+    source: [
+      'const ae: TQorusExpressionSchemaArg = {',
+      "  signature_type_code: 'any', name: 'list<string>', ui_type: 'list', element_type: 'string', ui_element_type: 'richtext',",
+      "  display_name: 'YAML Serialization Options', short_desc: 'o', desc: 'o', sensitive: false,",
+      "  element_allowed_values: [{ display_name: 'Canonical?', value: { type: 'richtext', value: 'Canonical' } }],",
+      '  element_allowed_values_creatable: false,',
+      '};',
+    ].join('\n'),
+  },
+  {
+    name: 'an argument with an example and labels',
+    source: [
+      'const af: TQorusExpressionSchemaArg = {',
+      "  signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', display_name: 'Regex', short_desc: 'r', desc: 'r',",
+      "  sensitive: false, required: true, example_value: '^[A-Z][0-9]+$', label_before: 'matches', label_after: 'exactly',",
+      '};',
+    ].join('\n'),
+  },
+];
+
+/** Expression entries that must not compile, each with a control as for form fields. */
+const INVALID_EXPRESSIONS: (ICase & { control: string })[] = [
+  {
+    name: 'an argument whose UI type nothing knows',
+    source:
+      "const xa: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'x', ui_type: 'not-a-qorus-type' };",
+    control: "const xa: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'x', ui_type: 'richtext' };",
+  },
+  {
+    name: 'a list argument whose element UI type nothing knows',
+    source:
+      "const xb: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'list<x>', ui_type: 'list', ui_element_type: 'not-a-qorus-type' };",
+    control:
+      "const xb: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'list<x>', ui_type: 'list', ui_element_type: 'richtext' };",
+  },
+  {
+    name: 'a UI default with a type nothing knows',
+    source:
+      "const xc: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'x', ui_type: 'bool', ui_default_value: { type: 'not-a-qorus-type', value: true } };",
+    control:
+      "const xc: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'x', ui_type: 'bool', ui_default_value: { type: 'bool', value: true } };",
+  },
+  {
+    name: 'a return type nothing knows',
+    source: "const xd: IQorusExpressionSchema['return_type'] = 'not-a-qorus-type';",
+    control: "const xd: IQorusExpressionSchema['return_type'] = 'list<auto>';",
+  },
+  {
+    // Only a list or a hash carries an element type.
+    name: 'a generic return type of a type that takes no element type',
+    source: "const xe: IQorusExpressionSchema['return_type'] = 'bool<auto>';",
+    control: "const xe: IQorusExpressionSchema['return_type'] = 'hash<auto>';",
+  },
+];
+
 const codes = (diagnostics: Record<string, IDiagnostic[]>) =>
   Object.fromEntries(Object.entries(diagnostics).map(([name, list]) => [name, list.map(({ code }) => code)]));
 
@@ -236,5 +366,21 @@ describe('the form schema contract', () => {
 
     expect(rejected).toEqual(Object.fromEntries(INVALID.map(({ name }) => [name, [2322]])));
     expect(controls).toEqual(Object.fromEntries(INVALID.map(({ name }) => [name, []])));
+  });
+});
+
+describe('the expression catalogue contract', () => {
+  jest.setTimeout(60000);
+
+  it('accepts every entry the server sends', () => {
+    expect(diagnose(VALID_EXPRESSIONS)).toEqual(Object.fromEntries(VALID_EXPRESSIONS.map(({ name }) => [name, []])));
+  });
+
+  it('rejects each invalid entry for the reason it is invalid', () => {
+    const rejected = codes(diagnose(INVALID_EXPRESSIONS));
+    const controls = diagnose(INVALID_EXPRESSIONS.map(({ name, control }) => ({ name, source: control })));
+
+    expect(rejected).toEqual(Object.fromEntries(INVALID_EXPRESSIONS.map(({ name }) => [name, [2322]])));
+    expect(controls).toEqual(Object.fromEntries(INVALID_EXPRESSIONS.map(({ name }) => [name, []])));
   });
 });
