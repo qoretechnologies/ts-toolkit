@@ -3,9 +3,9 @@ import { IReqorePanelProps } from '@qoretechnologies/reqore/dist/components/Pane
 import { TReqoreIntent } from '@qoretechnologies/reqore/dist/constants/theme';
 import { IReqoreAutoFocusRules } from '@qoretechnologies/reqore/dist/hooks/useAutoFocus';
 import { IReqoreIconName } from '@qoretechnologies/reqore/dist/types/icons';
-import { IReqraftFileFormFieldProps } from '@qoretechnologies/reqraft/dist/components/form/fields/file/File';
+import type { DropzoneOptions } from 'react-dropzone';
 import { IQorusExpression, IQorusExpressionSchema } from './expressions';
-import { TQorusType } from './qorus';
+import { TQorusCustomUIType, TQorusType } from './qorus';
 
 export type TQorusFormOperatorValue = string | string[] | undefined | null;
 
@@ -54,9 +54,51 @@ export interface IQorusAllowedValue<IMetadata extends Record<string, any> = Reco
 
 export type TQorusFormFieldOnChangeEvents = 'refetch';
 
+/**
+ * The options each field type takes in `type_options`.
+ *
+ * `file` is typed with `react-dropzone`'s options, which is what reqraft's file
+ * field hands them to. It is not read through reqraft's own props: reqraft
+ * depends on this package, and importing its types here made every consumer
+ * install a second, older reqraft.
+ */
 export type IQorusTypeOptionsMapper = {
-  file: IReqraftFileFormFieldProps['options'];
+  file: DropzoneOptions;
 };
+
+/** A default written with the type it holds — and, for an expression, `is_expression`. */
+export interface IQorusFormFieldTypedDefaultValue {
+  type: TQorusType;
+  value?: unknown;
+  is_expression?: boolean;
+}
+
+/**
+ * A default written as the plain value. An object without `type` is a hash
+ * value; one WITH `type` is read as a typed default by the form engines, so it
+ * cannot be a plain hash.
+ */
+export type TQorusFormFieldPlainDefaultValue =
+  | string
+  | number
+  | boolean
+  | null
+  | unknown[]
+  | { type?: never; [key: string]: unknown };
+
+/**
+ * A field's `default_value`, in either shape the server sends it: the plain
+ * value (`"default_value": 512` — Qore's `DataProviderOptionInfo.default_value`
+ * is `auto`) or a typed default (`{"type": "bool", "value": {...},
+ * "is_expression": true}`).
+ */
+export type TQorusFormFieldDefaultValue = IQorusFormFieldTypedDefaultValue | TQorusFormFieldPlainDefaultValue;
+
+/**
+ * What a field's `ui_type` names: a Qorus type, or an editor the consumer
+ * registered in `IQorusCustomUITypes`.
+ */
+export type TQorusFormFieldUIType = TQorusType | TQorusCustomUIType;
 
 export interface IQorusFormFieldSchemaBase {
   element_type?: TQorusType;
@@ -65,11 +107,7 @@ export interface IQorusFormFieldSchemaBase {
   value?: unknown | IQorusExpression;
   desc?: string;
 
-  default_value?: {
-    type: TQorusType;
-    value?: unknown;
-    is_expression?: boolean;
-  };
+  default_value?: TQorusFormFieldDefaultValue;
   default_value_desc?: string;
   default_value_display_name?: string;
 
@@ -128,15 +166,16 @@ export interface IQorusFormFieldSchemaBase {
    * // language picker without an `on_change`/refetch round-trip:
    * {
    *   source: {
+   *     type: 'string',
    *     ui_type: 'code-editor',
    *     inherit_props: { language: 'lang' },
    *   },
    *   lang: {
-   *     ui_type: 'string',
+   *     type: 'string',
    *     default_value: 'qore',
    *     allowed_values: [
-   *       { value: 'qore',   display_name: 'Qore'   },
-   *       { value: 'python', display_name: 'Python' },
+   *       { value: { type: 'string', value: 'qore' },   display_name: 'Qore'   },
+   *       { value: { type: 'string', value: 'python' }, display_name: 'Python' },
    *     ],
    *   },
    * }
@@ -150,6 +189,12 @@ export interface IQorusFormFieldSchemaBase {
 
   disabled?: boolean;
   readonly?: boolean;
+  /**
+   * The field belongs to the form but gets no editor of its own: its value is
+   * still carried, and can be required through `required_groups`, while other
+   * fields supply it. The Qorus server hides a test step's `target` this way.
+   */
+  hidden?: boolean;
 
   intent?: TReqoreIntent;
   metadata?: Record<string, any>;
@@ -157,7 +202,7 @@ export interface IQorusFormFieldSchemaBase {
   tags?: IReqoreCollectionItemProps['tags'];
 
   options?: {
-    file?: IReqraftFileFormFieldProps['options'];
+    file?: DropzoneOptions;
   };
 
   messages?: IQorusFormFieldMessage[];
@@ -182,15 +227,23 @@ export interface IQorusFormFieldSchemaBase {
   stretch?: boolean;
 }
 
+/**
+ * One field of a form.
+ *
+ * `type` is how the value is stored; the server sends a list when an option
+ * accepts several (Qore's `DataProvider::getInfoAsData()`), and the form
+ * engines use the first. `ui_type` names the editor, and is optional: most
+ * server schemas carry none, and the engines fall back to `type`.
+ */
 export type TQorusFormFieldSchema =
   | ({
       type: keyof IQorusTypeOptionsMapper;
-      ui_type: keyof IQorusTypeOptionsMapper;
+      ui_type?: keyof IQorusTypeOptionsMapper;
       type_options?: IQorusTypeOptionsMapper[keyof IQorusTypeOptionsMapper];
     } & IQorusFormFieldSchemaBase)
   | ({
-      type: Exclude<TQorusType, keyof IQorusTypeOptionsMapper>;
-      ui_type: Exclude<TQorusType, keyof IQorusTypeOptionsMapper>;
+      type: Exclude<TQorusType, keyof IQorusTypeOptionsMapper> | TQorusType[];
+      ui_type?: Exclude<TQorusFormFieldUIType, keyof IQorusTypeOptionsMapper>;
     } & IQorusFormFieldSchemaBase);
 
 export interface IQorusFormSchema {
