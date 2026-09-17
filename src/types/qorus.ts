@@ -58,7 +58,13 @@ export type TQorusStringCompatibleUIType =
   | 'select-string'
   | 'file-as-string';
 export type TQorusNumberCompatibleUIType = 'int' | 'integer' | 'float' | 'number';
-export type TQorusListCompatibleUIType = 'list' | 'range' | 'free-list';
+/**
+ * `select-array` and `multi-select` are the object picker: the server sends
+ * `select-array` as a field's `ui_type` (`MapperMetadata.qc`,
+ * `QorusMapManager.qc`) and reads a value stored under either name
+ * (`lib/misc.ql`), the older one being what the legacy field submitted.
+ */
+export type TQorusListCompatibleUIType = 'list' | 'range' | 'free-list' | 'select-array' | 'multi-select';
 export type TQorusHashCompatibleUIType = 'hash' | 'data' | 'rgbcolor' | 'free-hash';
 export type TQorusNullCompatibleUIType = 'null' | 'nothing';
 export type TQorusAnyCompatibleUIType = 'any' | 'auto';

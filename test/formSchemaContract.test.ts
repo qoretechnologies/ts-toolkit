@@ -34,9 +34,9 @@ interface IDiagnostic {
 /** Compiles every case in one program and returns each case's diagnostics. */
 const diagnose = (cases: ICase[]): Record<string, IDiagnostic[]> => {
   const header = [
-    "import type { IQorusFormSchema, TQorusFormFieldSchema, TQorusType as TUiType } from '../src';",
+    "import type { IQorusFormField, IQorusFormSchema, TQorusFormFieldSchema, TQorusType as TUiType } from '../src';",
     "import type { IQorusExpressionSchema, TQorusExpressionSchemaArg } from '../src';",
-    'export type TUnused = TUiType | TQorusFormFieldSchema | IQorusExpressionSchema | TQorusExpressionSchemaArg;',
+    'export type TUnused = TUiType | TQorusFormFieldSchema | IQorusExpressionSchema | TQorusExpressionSchemaArg | IQorusFormField;',
     // A consumer registers its own editor through the package entry point,
     // as the IDE does.
     "declare module '../src' {",
@@ -156,6 +156,23 @@ const VALID: ICase[] = [
       "const r: IQorusFormSchema = { target: { type: 'string', required_groups: ['iface-kind', 'iface-name'], hidden: true } };",
   },
   {
+    // MapperMetadata.qc: a list of mapper codes rendered by the object picker,
+    // and QorusMapManager.qc:1351, where the same picker fills a string field.
+    name: 'the object picker',
+    source: [
+      "const s: IQorusFormSchema = { codes: { type: 'list', ui_type: 'select-array' } };",
+      "const t: IQorusFormSchema = { name: { type: 'string', ui_type: 'select-array' } };",
+    ].join('\n'),
+  },
+  {
+    // misc.ql:855 reads a value stored under either name.
+    name: 'a value the object picker stores',
+    source: [
+      "const u: IQorusFormField = { type: 'select-array', value: [{ name: 'READ' }] };",
+      "const v: IQorusFormField = { type: 'multi-select', value: ['READ'] };",
+    ].join('\n'),
+  },
+  {
     // Qore's DataProvider::getInfoAsData() sends an option's `type` as the list
     // of the types it accepts.
     name: 'a field that accepts several types',
@@ -200,6 +217,11 @@ const INVALID: (ICase & { control: string })[] = [
     name: 'an editor nobody registered',
     source: "const q: IQorusFormSchema = { ref: { type: 'string', ui_type: 'unregistered-editor' } };",
     control: "const q: IQorusFormSchema = { ref: { type: 'string', ui_type: 'test-reference' } };",
+  },
+  {
+    name: 'a picker nobody renders',
+    source: "const w: IQorusFormSchema = { codes: { type: 'list', ui_type: 'array-picker' } };",
+    control: "const w: IQorusFormSchema = { codes: { type: 'list', ui_type: 'select-array' } };",
   },
   {
     name: 'file options on a field that is not a file',
