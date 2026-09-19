@@ -1,5 +1,5 @@
 import { IReqoreCollectionItemProps } from '@qoretechnologies/reqore/dist/components/Collection/item';
-import { IReqorePanelProps } from '@qoretechnologies/reqore/dist/components/Panel';
+import { IReqorePanelAction, IReqorePanelProps } from '@qoretechnologies/reqore/dist/components/Panel';
 import { TReqoreIntent } from '@qoretechnologies/reqore/dist/constants/theme';
 import { IReqoreAutoFocusRules } from '@qoretechnologies/reqore/dist/hooks/useAutoFocus';
 import { IReqoreIconName } from '@qoretechnologies/reqore/dist/types/icons';
@@ -24,11 +24,117 @@ export type TQorusForm =
 
 export type TQorusFlatForm = Record<string, any>;
 
+/**
+ * The `depends_on` grammar, reused wherever something has to be said only in
+ * certain states of the SAME form.
+ *
+ * A bare `name` means the sibling has a value; `!name` means it has none;
+ * `name=value` and `name!=value` compare the answer. Top-level entries are an
+ * AND, and a nested array is an OR of its own entries.
+ *
+ * Both halves of a condition are evaluated against the values of one form. A
+ * predicate cannot reach into a nested `arg_schema` sub-form or out to its
+ * parent: those are separate value scopes, and a condition that silently never
+ * fires would be worse than no condition at all.
+ */
+export type TQorusDependencyList = (string | string[])[];
+
 export interface IQorusFormFieldMessage {
   title?: string;
   content: string;
   intent?: TReqoreIntent;
+  /**
+   * Show the message only while EVERY entry holds — {@link
+   * TQorusDependencyList}.
+   *
+   * A message declared on a descriptor is otherwise static: it is served with
+   * the schema and says the same thing whatever the user has typed. That is
+   * right for a note and wrong for a warning about a COMBINATION, because an
+   * always-on warning sitting over a valid configuration is one people learn to
+   * scroll past — so it is not there when it finally means something.
+   *
+   * Sent by the Qorus server as `FieldUiMessageInfo::when`.
+   */
+  when?: TQorusDependencyList;
+  /** Hide the message while every entry holds — the negative form of `when`. */
+  unless?: TQorusDependencyList;
 }
+
+/**
+ * One affordance offered beside a value, as a DESCRIPTOR rather than a node.
+ *
+ * Allowed values routinely travel through a `JSON.stringify(items)` memo key in
+ * the form engines, and a rendered React element is circular through its fibre
+ * — putting one on a value throws and takes the whole form down with it. So a
+ * descriptor NAMES the component and hands it props; `as` is a function or a
+ * memo object, which `JSON.stringify` simply omits.
+ */
+export interface IQorusUiComponentDescriptor {
+  /**
+   * The component to render. The renderer decides the default.
+   *
+   * Typed through the component library rather than through `react` directly:
+   * `react` is not a dependency of this package, and a published declaration
+   * may only import what a consumer installs with it.
+   */
+  as?: IReqorePanelAction['as'];
+  /** Props handed to it. Keep them JSON-serialisable. */
+  props?: Record<string, unknown>;
+}
+
+/** Where a popover opens, as the placements every renderer accepts. */
+export type TQorusUiPlacement =
+  | 'auto'
+  | 'auto-start'
+  | 'auto-end'
+  | 'top'
+  | 'top-start'
+  | 'top-end'
+  | 'bottom'
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'right'
+  | 'right-start'
+  | 'right-end'
+  | 'left'
+  | 'left-start'
+  | 'left-end';
+
+/**
+ * A tooltip opened from a value's own row: a bare string, or options whose
+ * content is a {@link IQorusUiComponentDescriptor} under the same
+ * no-React-elements rule.
+ *
+ * Only the options every renderer honours are named. It is deliberately NOT
+ * typed as the component library's own tooltip interface: this package is a
+ * dependency of the renderers, and importing their types here made every
+ * consumer install a second, older copy of them.
+ */
+export type TQorusUiTooltip =
+  | string
+  | {
+      content?: string | IQorusUiComponentDescriptor;
+      /**
+       * What opens it. A hover popover is read-only; a click one is
+       * interactive. `focus` opens it from the keyboard, which is the only
+       * handler a reader who never uses a pointer can reach.
+       *
+       * All four the renderers honour, so all four are named here: a value's
+       * tooltip is widened by reqraft to its component library's own tooltip
+       * options, and a union narrower than that one cannot be re-declared on a
+       * type extending this one.
+       */
+      handler?: 'hover' | 'click' | 'focus' | 'hoverStay';
+      /** Milliseconds a hover must rest before it opens. */
+      delay?: number;
+      placement?: TQorusUiPlacement;
+      title?: string;
+      maxWidth?: string;
+      maxHeight?: string;
+      noArrow?: boolean;
+      intent?: TReqoreIntent;
+      icon?: IReqoreIconName;
+    };
 
 export interface IQorusAllowedValue<IMetadata extends Record<string, any> = Record<string, any>> {
   display_name: string;
@@ -42,11 +148,58 @@ export interface IQorusAllowedValue<IMetadata extends Record<string, any> = Reco
   };
   ui_type?: TQorusType;
   type?: TQorusType;
+  /**
+   * The value is offered but cannot be picked, and the reason is in
+   * {@link messages}.
+   *
+   * Set by whoever already KNOWS — the server, for a sandbox or permission
+   * context, a capability of the selected kind, or a requirement in another
+   * scope that {@link depends_on} deliberately cannot reach. A renderer must
+   * disable and say why rather than hide the value: a value that vanishes takes
+   * its own explanation with it, and the reader is left looking for something
+   * they were told exists.
+   */
   disabled?: boolean;
+  /**
+   * The value is offered only while EVERY entry holds — {@link
+   * TQorusDependencyList}, the same grammar and the same evaluator a FIELD's
+   * `depends_on` uses, one level down.
+   *
+   * For what the form itself can decide. Where the answer depends on something
+   * only the server knows, it sends {@link disabled} with a message instead;
+   * the two render identically, so a reader never has to know which decided.
+   *
+   * @example
+   * ```ts
+   * // A scheme's cookie-only mode, offered once a cookie name is set:
+   * { display_name: 'Cookie', value: { type: 'string', value: 'cookie' },
+   *   depends_on: ['cookie_name'] }
+   * ```
+   */
+  depends_on?: TQorusDependencyList;
   intent?: TReqoreIntent;
   badge?: IReqorePanelProps['badge'];
   messages?: IQorusFormFieldMessage[];
+  /**
+   * Affordances rendered in the value's BODY, under its description — each one
+   * costs a line of its own.
+   */
   actions?: IReqorePanelProps['actions'];
+  /**
+   * Affordances rendered in the value's TITLE BAR, inline with its name, where
+   * a row already reserves the height.
+   *
+   * Separate from {@link actions} rather than a relocation of it: body actions
+   * have been rendered under the description for as long as there have been
+   * pickers, and callers size and lay them out on that basis.
+   */
+  title_actions?: IQorusUiComponentDescriptor[];
+  /**
+   * A tooltip on the whole ROW, not on one control inside it. Content that is
+   * more than a sentence belongs here rather than in a description, which every
+   * row pays for in height whether it is read or not.
+   */
+  tooltip?: TQorusUiTooltip;
   icon?: IReqoreIconName;
   image?: string;
   metadata?: IMetadata;
@@ -143,7 +296,16 @@ export interface IQorusFormFieldSchemaBase {
   app?: string;
   action?: string;
 
-  depends_on?: string[] | string[][];
+  /**
+   * The field is offered only while EVERY entry holds — {@link
+   * TQorusDependencyList}.
+   *
+   * The two halves of the list mix freely (`[['kind=workflow', 'kind=service'],
+   * 'name']` — one of the versioned kinds, AND a name to attach a version to),
+   * which is what the server sends and what the form engines evaluate. It used
+   * to be typed as `string[] | string[][]`, which cannot say that.
+   */
+  depends_on?: TQorusDependencyList;
   has_dependents?: boolean;
   on_change?: TQorusFormFieldOnChangeEvents[];
 

@@ -173,6 +173,68 @@ const VALID: ICase[] = [
     ].join('\n'),
   },
   {
+    // The grammar the form engines evaluate: top-level entries are an AND and a
+    // nested one is an OR, and the two mix in one list. A test's subject version
+    // field declares exactly this — one of the versioned kinds, AND a name to
+    // attach a version to.
+    name: 'a dependency list that mixes an any-of group with a bare name',
+    source:
+      "const da: IQorusFormSchema = { version: { type: 'string', depends_on: [['kind=workflow', 'kind=service'], 'name'] } };",
+  },
+  {
+    // `!name` — the sibling has NO value. Mutual exclusion cannot be written
+    // with `!=`, which requires the sibling to be answered.
+    name: 'a dependency on a sibling being unanswered',
+    source:
+      "const db: IQorusFormSchema = { convert_to_openapi3: { type: 'bool', depends_on: ['!convert_from_nodeset2'] } };",
+  },
+  {
+    // The same grammar one level down: the value is offered only while the
+    // sibling holds the answer that makes it meaningful.
+    name: 'an allowed value that depends on a sibling',
+    source: [
+      "const dc: IQorusFormSchema = { scheme: { type: 'string', allowed_values: [",
+      "  { display_name: 'Cookie', value: { type: 'string', value: 'cookie' }, depends_on: ['cookie_name'] },",
+      "] } };",
+    ].join('\n'),
+  },
+  {
+    // What only the server knows: it refuses the value and says why, and the
+    // message carries the reason a renderer shows in place of the choice.
+    name: 'an allowed value the server has already refused',
+    source: [
+      "const dd: IQorusFormSchema = { store: { type: 'string', allowed_values: [",
+      "  { display_name: 'Local Filesystem', value: { type: 'string', value: 'file' }, disabled: true,",
+      "    messages: [{ intent: 'warning', content: 'This sandbox denies the FILESYSTEM domain.' }] },",
+      "] } };",
+    ].join('\n'),
+  },
+  {
+    // A warning about a COMBINATION, which a static message cannot say: it is
+    // there only while the exemption it warns about is also on.
+    name: 'a message that applies only to a combination',
+    source: [
+      "const de: IQorusFormSchema = { permissions: { type: 'string', messages: [",
+      "  { intent: 'warning', content: 'Anonymous callers skip these entirely.', when: ['allow_anonymous=true'] },",
+      "  { intent: 'info', content: 'Checked on every request.', unless: ['allow_anonymous=true'] },",
+      "] } };",
+    ].join('\n'),
+  },
+  {
+    // The kind picker in the IDE: the explanation on the row's own hover and on
+    // a control in its title bar, both as descriptors rather than nodes.
+    name: 'an allowed value carrying its own row affordances',
+    source: [
+      "declare const Prose: (props: { explanation?: string }) => null;",
+      "const df: IQorusFormSchema = { kind: { type: 'select-string', allowed_values: [",
+      "  { display_name: 'Coverage: process', value: { type: 'string', value: 'process_coverage' },",
+      "    title_actions: [{ as: Prose, props: { explanation: 'Qorus spreads its work.' } }],",
+      "    tooltip: { handler: 'hover', delay: 300, placement: 'bottom-start', maxWidth: '460px',",
+      "      content: { as: Prose, props: { explanation: 'Qorus spreads its work.' } } } },",
+      "] } };",
+    ].join('\n'),
+  },
+  {
     // Qore's DataProvider::getInfoAsData() sends an option's `type` as the list
     // of the types it accepts.
     name: 'a field that accepts several types',
@@ -232,6 +294,18 @@ const INVALID: (ICase & { control: string })[] = [
     name: 'a default that is code',
     source: "const o: IQorusFormSchema = { name: { type: 'string', default_value: () => 'x' } };",
     control: "const o: IQorusFormSchema = { name: { type: 'string', default_value: 'x' } };",
+  },
+  {
+    // The grammar is exactly two levels deep: an AND of entries, each of which
+    // is a name or an OR of names. A third level has no meaning — an OR of ORs
+    // is the same OR — and the widening that let an any-of group sit beside a
+    // bare name must not have opened the list to arbitrary nesting, which no
+    // evaluator would know what to do with.
+    name: 'a dependency nested deeper than the grammar goes',
+    source:
+      "const dz: IQorusFormSchema = { version: { type: 'string', depends_on: [[['too', 'deep']]] } };",
+    control:
+      "const dz: IQorusFormSchema = { version: { type: 'string', depends_on: [['kind=workflow', 'kind=service']] } };",
   },
   {
     // An object default that has a `type` is read as a typed default by the
