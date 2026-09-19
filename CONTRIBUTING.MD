@@ -33,6 +33,21 @@ Pull requests are the best way to propose changes to the codebase (we use [Githu
 5. Make sure your code lints.
 6. Issue that pull request!
 
+## Running the tests
+
+`yarn precheck` runs the lint, the tests and a build of the published types, and it is green without any
+configuration.
+
+Some suites talk to a live Qorus instance. They are selected by the `ENDPOINT`, `TESTUSER` and `TESTPASS`
+environment variables (see `.env.example`; a `.env` file is read automatically). When those are not set, every
+suite that needs them reports as **skipped**, naming what is missing — it never fails. CI supplies them as
+secrets, so the integration suites run there.
+
+If you add a suite that needs the instance, take `describeIntegration` (or `itIntegration` for a single case)
+from `test/integrationEnv.ts` instead of reading `process.env` yourself. Anything that can be decided without
+the server — URL building, serialisation, error mapping — belongs in a unit block with `fetch` mocked, as in
+`test/QorusRequest.test.ts`.
+
 ## Any contributions you make will be under the MIT Software License
 
 In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.

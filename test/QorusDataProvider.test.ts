@@ -1,14 +1,11 @@
 import dotenv from 'dotenv';
 import { QorusAuthenticator } from '../src';
 import { QorusDataProvider } from '../src/';
+import { describeIntegration } from './integrationEnv';
 
 dotenv.config();
 
-if (!(process.env.ENDPOINT && process.env.TESTUSER && process.env.TESTPASS)) {
-  throw new Error('Missing required environment variables');
-}
-
-describe.skip('QorusDataProvider Utility Class Tests', () => {
+describeIntegration.skip('QorusDataProvider Utility Class Tests', () => {
   jest.setTimeout(30000);
   beforeAll(async () => {
     await QorusAuthenticator.reset();

@@ -1,15 +1,12 @@
 import dotenv from 'dotenv';
 import { QorusAuthenticator as QorusAuth, QorusDataProvider } from '../src';
 import logger from '../src/managers/logger';
+import { describeIntegration } from './integrationEnv';
 
 dotenv.config();
 const loggerMock = jest.spyOn(logger, 'error');
 
-if (!(process.env.ENDPOINT && process.env.TESTUSER && process.env.TESTPASS)) {
-  throw new Error('Missing required environment variables');
-}
-
-describe.skip('QorusOptions', () => {
+describeIntegration.skip('QorusOptions', () => {
   beforeAll(async () => {
     await QorusAuth.addEndpoint({
       url: process.env.ENDPOINT!,
