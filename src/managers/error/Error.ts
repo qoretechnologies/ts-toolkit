@@ -1,6 +1,8 @@
 class BaseError extends Error {
   statusCode?: number;
+
   isOperational: boolean;
+
   constructor(description: string, isOperational, name, statusCode) {
     super(description);
 

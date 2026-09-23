@@ -1,4 +1,5 @@
 import { isArray } from 'lodash';
+import type { TQorusType } from '../types/qorus';
 
 /**
  * Function to trimmed address for a url
@@ -110,25 +111,8 @@ export type TOption = {
 };
 export type TOperatorValue = string | string[] | undefined | null;
 
-export type TQorusType =
-  | 'string'
-  | 'int'
-  | 'list'
-  | 'bool'
-  | 'float'
-  | 'binary'
-  | 'hash'
-  | 'date'
-  | 'any'
-  | 'auto'
-  | 'mapper'
-  | 'workflow'
-  | 'service'
-  | 'job'
-  | 'select-string'
-  | 'data-provider'
-  | 'file-as-string'
-  | 'number';
+/* The validator checks the same types the forms describe. */
+export type { TQorusType };
 
 type TOptions =
   | {

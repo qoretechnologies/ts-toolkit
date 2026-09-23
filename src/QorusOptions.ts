@@ -1,4 +1,4 @@
-import { TObjectWithAnyValue, TObjectWithStringKey } from '../src';
+import type { TObjectWithAnyValue, TObjectWithStringKey } from './index';
 import ErrorInternal from './managers/error/ErrorInternal';
 import logger from './managers/logger';
 import { IDataProviderChildren } from './QorusDataProvider';

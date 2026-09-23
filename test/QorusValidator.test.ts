@@ -1,14 +1,11 @@
 import dotenv from 'dotenv';
 import QorusValidator from '../src/QorusValidator';
 import { fixOperatorValue, getAddress, splitByteSize } from '../src/utils/validation';
+import { describeIntegration } from './integrationEnv';
 
 dotenv.config();
 
-if (!(process.env.ENDPOINT && process.env.TESTUSER && process.env.TESTPASS)) {
-  throw new Error('Missing required environment variables');
-}
-
-describe.skip('QorusDataProvider Utility Class Tests', () => {
+describeIntegration.skip('QorusDataProvider Utility Class Tests', () => {
   it('should validate the value for all string types', () => {
     expect(QorusValidator.validate('binary', 'Qorus Test String')).toEqual(true);
     expect(QorusValidator.validate('string', 'Qorus Test String')).toEqual(true);
