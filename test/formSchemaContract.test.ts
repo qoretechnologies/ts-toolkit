@@ -352,6 +352,15 @@ const VALID_EXPRESSIONS: ICase[] = [
     ].join('\n'),
   },
   {
+    // Qore's `DataProviderExpressionBaseInfo.internal` (DataProvider 3.11): the
+    // item of a list wildcard is drawn only inside the wildcard, never picked.
+    name: 'an expression never offered for picking, and one that is',
+    source: [
+      "const ei: IQorusExpressionSchema = { type: 1, subtype: 1, name: 'wildcard_item', display_name: 'wildcard item', short_desc: 'The item of the enclosing [*] wildcard', desc: 'w', symbol: '', role: 3, args: [], return_type: 'any', ui_return_type: 'any', varargs: false, groups: ['Data Manipulation'], internal: true };",
+      "const ej: IQorusExpressionSchema = { type: 2, subtype: 1, name: 'size', display_name: 'Get Size', short_desc: 's', desc: 's', symbol: 'size', role: 3, args: [], return_type: 'int', ui_return_type: 'int', varargs: false, internal: false };",
+    ].join('\n'),
+  },
+  {
     name: 'a logic group',
     source:
       "const ee: IQorusExpressionSchema = { type: 1, subtype: 2, name: '&&', display_name: 'And', short_desc: 'a', desc: 'a', symbol: '&&', role: 3, args: [], return_type: 'bool', ui_return_type: 'bool', varargs: true, min_args: 2 };",
