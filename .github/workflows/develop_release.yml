@@ -8,6 +8,10 @@ on:
 env:
   TEST_DATASOURCE_CONNECT_STRING: ${{ secrets.TEST_DATASOURCE_CONNECT_STRING }}
 
+# create-release writes the tag + release; nothing else here writes to the repo
+permissions:
+  contents: write
+
 jobs:
   Publish-and-release:
     runs-on: ubuntu-latest
