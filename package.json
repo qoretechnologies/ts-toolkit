@@ -1,6 +1,6 @@
 {
   "name": "@qoretechnologies/ts-toolkit",
-  "version": "0.5.82",
+  "version": "0.5.83",
   "description": "Utility library to interact with Qorus Integration Engine & Qore Language",
   "keywords": [
     "qoretechnologies",
@@ -53,16 +53,16 @@
     "@babel/core": "^7.20.2",
     "@chromatic-com/storybook": "^1",
     "@qoretechnologies/reqore": "^0.48.20",
-    "@storybook/addon-actions": "^8.2.7",
-    "@storybook/addon-essentials": "^8.2.7",
-    "@storybook/addon-interactions": "^8.2.7",
-    "@storybook/addon-jest": "^8.2.7",
-    "@storybook/addon-links": "^8.2.7",
-    "@storybook/addon-storysource": "^8.2.7",
+    "@storybook/addon-actions": "^8.6.19",
+    "@storybook/addon-essentials": "^8.6.19",
+    "@storybook/addon-interactions": "^8.6.19",
+    "@storybook/addon-jest": "^8.6.19",
+    "@storybook/addon-links": "^8.6.19",
+    "@storybook/addon-storysource": "^8.6.19",
     "@storybook/addon-webpack5-compiler-swc": "^1.0.5",
-    "@storybook/react": "^8.2.7",
-    "@storybook/react-webpack5": "^8.2.7",
-    "@storybook/test": "^8.2.7",
+    "@storybook/react": "^8.6.19",
+    "@storybook/react-webpack5": "^8.6.19",
+    "@storybook/test": "^8.6.19",
     "@tsconfig/node16": "^1.0.3",
     "@types/jest": "^28.1.7",
     "@types/node": "^18.7.11",
@@ -111,5 +111,19 @@
     "qs": "^6.11.0",
     "react-dropzone": "^14.3.5",
     "react-markdown": "^8.0.4"
+  },
+  "resolutions": {
+    "cross-spawn": "^7.0.6",
+    "js-cookie": "^3.0.7",
+    "serialize-javascript": "^7.0.5",
+    "**/body-parser": "^1.20.3",
+    "**/express/path-to-regexp": "^0.1.13",
+    "**/express/qs": "^6.16.0",
+    "**/body-parser/qs": "^6.16.0",
+    "**/refractor/prismjs": "^1.30.0",
+    "**/mkdirp/minimist": "^1.2.8",
+    "uuid": "^11.1.1",
+    "**/webpack-dev-middleware": "^7.4.6",
+    "postcss-selector-parser": "^7.1.6"
   }
 }
