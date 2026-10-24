@@ -35,8 +35,8 @@ interface IDiagnostic {
 const diagnose = (cases: ICase[]): Record<string, IDiagnostic[]> => {
   const header = [
     "import type { IQorusFormField, IQorusFormSchema, TQorusFormFieldSchema, TQorusType as TUiType } from '../src';",
-    "import type { IQorusExpressionSchema, TQorusExpressionSchemaArg } from '../src';",
-    'export type TUnused = TUiType | TQorusFormFieldSchema | IQorusExpressionSchema | TQorusExpressionSchemaArg | IQorusFormField;',
+    "import type { IQorusExpressionSchema, TQorusBaseType, TQorusExpressionSchemaArg } from '../src';",
+    'export type TUnused = TUiType | TQorusFormFieldSchema | IQorusExpressionSchema | TQorusExpressionSchemaArg | IQorusFormField | TQorusBaseType;',
     // A consumer registers its own editor through the package entry point,
     // as the IDE does.
     "declare module '../src' {",
@@ -253,6 +253,54 @@ const VALID: ICase[] = [
     ].join('\n'),
   },
   {
+    // QorusMapManager.qc MetaFieldInfo / FieldInfo: a field's pattern, with
+    // what it accepts in plain words (Qore DataProvider 3.11
+    // `ActionOptionBaseInfo::validation_regex_desc`), which a form shows as
+    // "Must be ..." when a value does not match.
+    name: 'a pattern with its description in plain words',
+    source: [
+      'const pa: IQorusFormSchema = {',
+      "  lang: { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 'a two-letter language code, such as en' },",
+      "  code: { type: 'string', validation_regex: '^[A-Z]+$' },",
+      '};',
+    ].join('\n'),
+  },
+  {
+    // SystemRestClassV8::getUiType(): a field or an option of one of the
+    // DataProvider module's string format types is named by that type, and
+    // its value is text: `base_type` is the type of the value it holds.
+    name: 'fields of the string formats, with the base type of their values',
+    source: [
+      'const sf: IQorusFormSchema = {',
+      "  mail: { type: 'string', ui_type: 'email', base_type: 'string' },",
+      "  site: { type: 'string', ui_type: 'uri', base_type: 'string' },",
+      "  id: { type: 'string', ui_type: 'uuid', base_type: 'string' },",
+      "  host: { type: 'string', ui_type: 'hostname', base_type: 'string' },",
+      "  v4: { type: 'string', ui_type: 'ipv4', base_type: 'string' },",
+      "  v6: { type: 'string', ui_type: 'ipv6', base_type: 'string' },",
+      "  tel: { type: 'string', ui_type: 'phone', base_type: 'string' },",
+      "  callback: { type: 'uri', base_type: 'string' },",
+      '};',
+      "export const formats: TUiType[] = ['email', 'uri', 'uuid', 'hostname', 'ipv4', 'ipv6', 'phone'];",
+    ].join('\n'),
+  },
+  {
+    // A file is a hash, and a timeout an int.
+    name: 'a file and a timeout, with the base type of their values',
+    source: [
+      'const fb: IQorusFormSchema = {',
+      "  upload: { type: 'file', base_type: 'hash' },",
+      "  timeout: { type: 'int', base_type: 'int' },",
+      '};',
+    ].join('\n'),
+  },
+  {
+    // A list field says the base type of its elements as well.
+    name: 'a list field, with the base types of the list and of its elements',
+    source:
+      "const le: IQorusFormSchema = { sites: { type: 'list', element_type: 'uri', base_type: 'list', element_base_type: 'string' } };",
+  },
+  {
     // reqraft's FormEngine takes `componentOverrides` keyed by ui_type and a
     // `rendererOnlyUiTypes` list: a consumer names its own editors, and
     // registers the names (see the header).
@@ -308,6 +356,33 @@ const INVALID: (ICase & { control: string })[] = [
       "const dz: IQorusFormSchema = { version: { type: 'string', depends_on: [['kind=workflow', 'kind=service']] } };",
   },
   {
+    // The description is words a person reads, never anything else.
+    name: 'a pattern description that is not text',
+    source:
+      "const pz: IQorusFormSchema = { lang: { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 2 } };",
+    control:
+      "const pz: IQorusFormSchema = { lang: { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 'a two-letter language code, such as en' } };",
+  },
+  {
+    // A base type is the type of the value, never a UI type or a format.
+    name: 'a base type that is a string format',
+    source: "const bz: IQorusFormSchema = { site: { type: 'string', ui_type: 'uri', base_type: 'uri' } };",
+    control: "const bz: IQorusFormSchema = { site: { type: 'string', ui_type: 'uri', base_type: 'string' } };",
+  },
+  {
+    name: 'an element base type that is a string format',
+    source: "const ez: IQorusFormSchema = { sites: { type: 'list', element_type: 'uri', element_base_type: 'uri' } };",
+    control:
+      "const ez: IQorusFormSchema = { sites: { type: 'list', element_type: 'uri', element_base_type: 'string' } };",
+  },
+  {
+    // The top-level base_type of a type-info payload keeps DataProvider's raw
+    // meaning (richtext, timeout, all); a field's base type is never one.
+    name: 'a base type in the raw meaning of a type-info payload',
+    source: "const rz: IQorusFormSchema = { wait: { type: 'int', base_type: 'timeout' } };",
+    control: "const rz: IQorusFormSchema = { wait: { type: 'int', base_type: 'int' } };",
+  },
+  {
     // An object default that has a `type` is read as a typed default by the
     // form engines, so its `type` must be one.
     name: 'a typed default with a type nothing knows',
@@ -349,6 +424,15 @@ const VALID_EXPRESSIONS: ICase[] = [
     source: [
       "const ec: IQorusExpressionSchema = { type: 2, subtype: 1, name: 'split', display_name: 'Split', short_desc: 's', desc: 's', symbol: 'split', role: 3, args: [], return_type: 'list<auto>', ui_return_type: 'list', varargs: false };",
       "const ed: IQorusExpressionSchema['return_type'] = 'hash<auto>';",
+    ].join('\n'),
+  },
+  {
+    // Qore's `DataProviderExpressionBaseInfo.internal` (DataProvider 3.11): the
+    // item of a list wildcard is drawn only inside the wildcard, never picked.
+    name: 'an expression never offered for picking, and one that is',
+    source: [
+      "const ei: IQorusExpressionSchema = { type: 1, subtype: 1, name: 'wildcard_item', display_name: 'wildcard item', short_desc: 'The item of the enclosing [*] wildcard', desc: 'w', symbol: '', role: 3, args: [], return_type: 'any', ui_return_type: 'any', varargs: false, groups: ['Data Manipulation'], internal: true };",
+      "const ej: IQorusExpressionSchema = { type: 2, subtype: 1, name: 'size', display_name: 'Get Size', short_desc: 's', desc: 's', symbol: 'size', role: 3, args: [], return_type: 'int', ui_return_type: 'int', varargs: false, internal: false };",
     ].join('\n'),
   },
   {
@@ -409,6 +493,16 @@ const VALID_EXPRESSIONS: ICase[] = [
       '};',
     ].join('\n'),
   },
+  {
+    name: 'an argument with the base type of its value',
+    source:
+      "const ag: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'string' };",
+  },
+  {
+    name: 'a list argument, with the base type of its elements',
+    source:
+      "const al: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'list<string>', ui_type: 'list', element_type: 'string', ui_element_type: 'richtext', base_type: 'list', element_base_type: 'string' };",
+  },
 ];
 
 /** Expression entries that must not compile, each with a control as for form fields. */
@@ -439,12 +533,98 @@ const INVALID_EXPRESSIONS: (ICase & { control: string })[] = [
     control: "const xd: IQorusExpressionSchema['return_type'] = 'list<auto>';",
   },
   {
+    // `richtext` is how the UI shows a string, not the type of the value.
+    name: 'an argument whose base type is a UI type',
+    source:
+      "const xg: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'richtext' };",
+    control:
+      "const xg: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'string' };",
+  },
+  {
+    name: 'a list argument whose element base type is a UI type',
+    source:
+      "const xh: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'list<string>', ui_type: 'list', element_base_type: 'richtext' };",
+    control:
+      "const xh: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'list<string>', ui_type: 'list', element_base_type: 'string' };",
+  },
+  {
+    // DataProvider says `all` for a value of no type; a description says `any`.
+    name: 'an argument whose base type is the raw "all"',
+    source:
+      "const xi: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'any', ui_type: 'any', base_type: 'all' };",
+    control:
+      "const xi: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'any', ui_type: 'any', base_type: 'any' };",
+  },
+  {
     // Only a list or a hash carries an element type.
     name: 'a generic return type of a type that takes no element type',
     source: "const xe: IQorusExpressionSchema['return_type'] = 'bool<auto>';",
     control: "const xe: IQorusExpressionSchema['return_type'] = 'hash<auto>';",
   },
 ];
+
+/**
+ * Options of an app action as an app declares them, the shape Qore's
+ * `DataProvider::ActionOptionBaseInfo` carries (`IQoreAppActionBaseOption`).
+ */
+const VALID_ACTION_OPTIONS: ICase[] = [
+  {
+    // DataProvider 3.11 (Qore batch 6): the values a pattern accepts, in plain
+    // words written to complete "Must be ...", beside the pattern.
+    name: 'an option with a pattern and its description in plain words',
+    source: [
+      "import type { TQoreAppActionOption as TAoValid } from '../src';",
+      'const oa: TAoValid = {',
+      "  type: 'string', display_name: 'Language', validation_regex: '^[a-z]{2}$',",
+      "  validation_regex_desc: 'a two-letter language code, such as en',",
+      '};',
+    ].join('\n'),
+  },
+  {
+    // How a TypeScript app declares its options (module-v8): `satisfies` refuses
+    // a property the option types do not declare.
+    name: "an app's options declared as they satisfy TQoreOptions",
+    source: [
+      "import type { TQoreOptions as TQo } from '../src';",
+      'export const appOptions = {',
+      "  webhook: { type: 'string', display_name: 'Webhook', validation_regex: '^https://',",
+      "    validation_regex_desc: 'an https address, such as https://hooks.example.com/abc' },",
+      '} satisfies TQo;',
+    ].join('\n'),
+  },
+];
+
+/** Action options that must not compile, each with a control as for form fields. */
+const INVALID_ACTION_OPTIONS: (ICase & { control: string })[] = [
+  {
+    name: 'an option whose pattern description is not text',
+    source: [
+      "import type { TQoreAppActionOption as TAoInvalid } from '../src';",
+      "const oz: TAoInvalid = { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 2 };",
+    ].join('\n'),
+    control: [
+      "import type { TQoreAppActionOption as TAoInvalid } from '../src';",
+      "const oz: TAoInvalid = { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 'two letters, such as en' };",
+    ].join('\n'),
+  },
+];
+
+/**
+ * An expression argument takes no pattern (`TExpressionArg` leaves out
+ * `validation_regex`), so it takes no description of one either: an argument
+ * that carried one would say what a pattern accepts where there is none.
+ */
+const EXPRESSION_ARG_WITHOUT_PATTERN: ICase & { control: string } = {
+  name: 'an expression argument with a pattern description',
+  source: [
+    "import type { TExpressionArg as TEa } from '../src';",
+    "const ea: TEa = { type: 'string', type_code: 'any', validation_regex_desc: 'two letters, such as en' };",
+  ].join('\n'),
+  control: [
+    "import type { TExpressionArg as TEa } from '../src';",
+    "const ea: TEa = { type: 'string', type_code: 'any' };",
+  ].join('\n'),
+};
 
 const codes = (diagnostics: Record<string, IDiagnostic[]>) =>
   Object.fromEntries(Object.entries(diagnostics).map(([name, list]) => [name, list.map(({ code }) => code)]));
@@ -462,6 +642,31 @@ describe('the form schema contract', () => {
 
     expect(rejected).toEqual(Object.fromEntries(INVALID.map(({ name }) => [name, [2322]])));
     expect(controls).toEqual(Object.fromEntries(INVALID.map(({ name }) => [name, []])));
+  });
+});
+
+describe('the app action option contract', () => {
+  jest.setTimeout(60000);
+
+  it('accepts every option an app declares', () => {
+    expect(diagnose(VALID_ACTION_OPTIONS)).toEqual(
+      Object.fromEntries(VALID_ACTION_OPTIONS.map(({ name }) => [name, []])),
+    );
+  });
+
+  it('rejects each invalid option for the reason it is invalid', () => {
+    const rejected = codes(diagnose(INVALID_ACTION_OPTIONS));
+    const controls = diagnose(INVALID_ACTION_OPTIONS.map(({ name, control }) => ({ name, source: control })));
+
+    expect(rejected).toEqual(Object.fromEntries(INVALID_ACTION_OPTIONS.map(({ name }) => [name, [2322]])));
+    expect(controls).toEqual(Object.fromEntries(INVALID_ACTION_OPTIONS.map(({ name }) => [name, []])));
+  });
+
+  it('gives an expression argument no pattern description', () => {
+    const { name, source, control } = EXPRESSION_ARG_WITHOUT_PATTERN;
+    // an object literal may only specify known properties
+    expect(codes(diagnose([{ name, source }]))).toEqual({ [name]: [2322] });
+    expect(diagnose([{ name, source: control }])).toEqual({ [name]: [] });
   });
 });
 

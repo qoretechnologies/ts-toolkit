@@ -142,7 +142,17 @@ export interface IQoreAppActionBaseOption<CustomConnOptions extends TCustomConnO
   rest_get_allowed_values?: IQoreRestGetAllowedValues;
   allowed_values_creatable?: boolean;
   depends_on?: string[] | string[][];
+  /** An optional regex pattern for validating string values */
   validation_regex?: string;
+  /**
+   * An optional description in plain words of the values that {@link validation_regex} accepts
+   *
+   * Written to complete "Must be ...", so that a user interface can say why it refuses a value instead of saying that
+   * the value does not match the pattern, for example `"a two-letter language code, such as en"`; it describes the
+   * pattern only, and is not used for validation (Qore `DataProvider::ActionOptionBaseInfo::validation_regex_desc`,
+   * DataProvider 3.11)
+   */
+  validation_regex_desc?: string;
   messages?: TQoreOptionMessage[];
   attr?: Record<string, any>;
   sensitive?: boolean;

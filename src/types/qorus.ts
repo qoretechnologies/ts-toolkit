@@ -46,11 +46,18 @@ export type TQorusInterfaces =
   | 'test'
   | 'test-script';
 
+/**
+ * The string formats of Qore's DataProvider module: a field or an option of one of them is named by that type as its
+ * UI type (qorus `SystemRestClassV8::getUiType()`), and its value is text that the format describes. Qorus's data type
+ * catalogue (`GET /system/qorus-type-info`) has an entry for each, but a picker of types does not offer them.
+ */
+export type TQorusStringFormatUIType = 'email' | 'uri' | 'uuid' | 'hostname' | 'ipv4' | 'ipv6' | 'phone';
+
 /* Types used in UIs, these are not 1:1 to Qore types */
 export type TQorusStringCompatibleUIType =
   | 'binary'
   | 'date'
-  | 'email'
+  | TQorusStringFormatUIType
   | 'string'
   | 'long-string'
   | 'enum'
@@ -77,6 +84,29 @@ export type TQorusSpecialUIType =
   | 'processor-mappings'
   | 'tool-catalog'
   | 'code-editor';
+
+/**
+ * The type of the value a field, an option or an argument holds, whatever its UI type: `string` for a string format
+ * (`uri`, `email`, ...), `hash` for a `file`, `int` for a timeout. The base types of Qorus's data type catalogue, which
+ * are those of Qore's DataProvider module (`DataProvider::DataTypeCatalogue`); a description of a field, an option or
+ * an argument carries it as `base_type`, and a list one the type of its elements as `element_base_type`.
+ *
+ * Not the top-level `base_type` of Qorus's type-info payloads (the data provider type info and the action type info):
+ * that keeps the DataProvider module's raw meaning, the name of the value's Qore type, and can be `richtext`,
+ * `timeout` or `all` (a value of no type). Do not type it as this.
+ */
+export type TQorusBaseType =
+  | 'any'
+  | 'string'
+  | 'int'
+  | 'float'
+  | 'number'
+  | 'bool'
+  | 'date'
+  | 'binary'
+  | 'data'
+  | 'hash'
+  | 'list';
 
 export type TQorusType =
   | TQorusInterfaces
