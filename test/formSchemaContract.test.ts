@@ -35,8 +35,8 @@ interface IDiagnostic {
 const diagnose = (cases: ICase[]): Record<string, IDiagnostic[]> => {
   const header = [
     "import type { IQorusFormField, IQorusFormSchema, TQorusFormFieldSchema, TQorusType as TUiType } from '../src';",
-    "import type { IQorusExpressionSchema, TQorusExpressionSchemaArg } from '../src';",
-    'export type TUnused = TUiType | TQorusFormFieldSchema | IQorusExpressionSchema | TQorusExpressionSchemaArg | IQorusFormField;',
+    "import type { IQorusExpressionSchema, TQorusBaseType, TQorusExpressionSchemaArg } from '../src';",
+    'export type TUnused = TUiType | TQorusFormFieldSchema | IQorusExpressionSchema | TQorusExpressionSchemaArg | IQorusFormField | TQorusBaseType;',
     // A consumer registers its own editor through the package entry point,
     // as the IDE does.
     "declare module '../src' {",
@@ -295,6 +295,12 @@ const VALID: ICase[] = [
     ].join('\n'),
   },
   {
+    // A list field says the base type of its elements as well.
+    name: 'a list field, with the base types of the list and of its elements',
+    source:
+      "const le: IQorusFormSchema = { sites: { type: 'list', element_type: 'uri', base_type: 'list', element_base_type: 'string' } };",
+  },
+  {
     // reqraft's FormEngine takes `componentOverrides` keyed by ui_type and a
     // `rendererOnlyUiTypes` list: a consumer names its own editors, and
     // registers the names (see the header).
@@ -362,6 +368,19 @@ const INVALID: (ICase & { control: string })[] = [
     name: 'a base type that is a string format',
     source: "const bz: IQorusFormSchema = { site: { type: 'string', ui_type: 'uri', base_type: 'uri' } };",
     control: "const bz: IQorusFormSchema = { site: { type: 'string', ui_type: 'uri', base_type: 'string' } };",
+  },
+  {
+    name: 'an element base type that is a string format',
+    source: "const ez: IQorusFormSchema = { sites: { type: 'list', element_type: 'uri', element_base_type: 'uri' } };",
+    control:
+      "const ez: IQorusFormSchema = { sites: { type: 'list', element_type: 'uri', element_base_type: 'string' } };",
+  },
+  {
+    // The top-level base_type of a type-info payload keeps DataProvider's raw
+    // meaning (richtext, timeout, all); a field's base type is never one.
+    name: 'a base type in the raw meaning of a type-info payload',
+    source: "const rz: IQorusFormSchema = { wait: { type: 'int', base_type: 'timeout' } };",
+    control: "const rz: IQorusFormSchema = { wait: { type: 'int', base_type: 'int' } };",
   },
   {
     // An object default that has a `type` is read as a typed default by the
@@ -479,6 +498,11 @@ const VALID_EXPRESSIONS: ICase[] = [
     source:
       "const ag: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'string' };",
   },
+  {
+    name: 'a list argument, with the base type of its elements',
+    source:
+      "const al: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'list<string>', ui_type: 'list', element_type: 'string', ui_element_type: 'richtext', base_type: 'list', element_base_type: 'string' };",
+  },
 ];
 
 /** Expression entries that must not compile, each with a control as for form fields. */
@@ -515,6 +539,21 @@ const INVALID_EXPRESSIONS: (ICase & { control: string })[] = [
       "const xg: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'richtext' };",
     control:
       "const xg: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'string' };",
+  },
+  {
+    name: 'a list argument whose element base type is a UI type',
+    source:
+      "const xh: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'list<string>', ui_type: 'list', element_base_type: 'richtext' };",
+    control:
+      "const xh: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'list<string>', ui_type: 'list', element_base_type: 'string' };",
+  },
+  {
+    // DataProvider says `all` for a value of no type; a description says `any`.
+    name: 'an argument whose base type is the raw "all"',
+    source:
+      "const xi: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'any', ui_type: 'any', base_type: 'all' };",
+    control:
+      "const xi: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'any', ui_type: 'any', base_type: 'any' };",
   },
   {
     // Only a list or a hash carries an element type.

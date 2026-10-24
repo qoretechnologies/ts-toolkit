@@ -260,6 +260,8 @@ export interface IQorusFormFieldSchemaBase {
    * describes.
    */
   base_type?: TQorusBaseType;
+  /** The type of the values a list field's elements hold, as {@link base_type} is the field's. */
+  element_base_type?: TQorusBaseType;
   element_type?: TQorusType;
   ui_element_type?: string;
 

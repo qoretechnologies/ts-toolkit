@@ -88,8 +88,12 @@ export type TQorusSpecialUIType =
 /**
  * The type of the value a field, an option or an argument holds, whatever its UI type: `string` for a string format
  * (`uri`, `email`, ...), `hash` for a `file`, `int` for a timeout. The base types of Qorus's data type catalogue, which
- * are those of Qore's DataProvider module (`DataProvider::DataTypeCatalogue`); a description carries it as
- * `base_type`.
+ * are those of Qore's DataProvider module (`DataProvider::DataTypeCatalogue`); a description of a field, an option or
+ * an argument carries it as `base_type`, and a list one the type of its elements as `element_base_type`.
+ *
+ * Not the top-level `base_type` of Qorus's type-info payloads (the data provider type info and the action type info):
+ * that keeps the DataProvider module's raw meaning, the name of the value's Qore type, and can be `richtext`,
+ * `timeout` or `all` (a value of no type). Do not type it as this.
  */
 export type TQorusBaseType =
   | 'any'

@@ -16,6 +16,8 @@ export type TQorusExpressionSchemaArg = {
    * sends it with every argument it describes.
    */
   base_type?: TQorusBaseType;
+  /** The type of the values a list argument's elements hold, as {@link base_type} is the argument's. */
+  element_base_type?: TQorusBaseType;
   /** The element type name of a `list<...>` argument. */
   element_type?: string;
   ui_element_type?: TQorusType;
