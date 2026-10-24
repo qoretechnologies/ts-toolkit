@@ -5,7 +5,7 @@ import { IReqoreAutoFocusRules } from '@qoretechnologies/reqore/dist/hooks/useAu
 import { IReqoreIconName } from '@qoretechnologies/reqore/dist/types/icons';
 import type { DropzoneOptions } from 'react-dropzone';
 import { IQorusExpression, IQorusExpressionSchema } from './expressions';
-import { TQorusCustomUIType, TQorusType } from './qorus';
+import { TQorusBaseType, TQorusCustomUIType, TQorusType } from './qorus';
 
 export type TQorusFormOperatorValue = string | string[] | undefined | null;
 
@@ -254,6 +254,12 @@ export type TQorusFormFieldDefaultValue = IQorusFormFieldTypedDefaultValue | TQo
 export type TQorusFormFieldUIType = TQorusType | TQorusCustomUIType;
 
 export interface IQorusFormFieldSchemaBase {
+  /**
+   * The type of the value the field holds, whatever its `type` and `ui_type` name: `string` for a field of a string
+   * format such as `uri`, `hash` for a `file`, `int` for a timeout. Qorus sends it with every field and option it
+   * describes.
+   */
+  base_type?: TQorusBaseType;
   element_type?: TQorusType;
   ui_element_type?: string;
 

@@ -1,5 +1,5 @@
 import type { IQorusAllowedValue, IQorusFormFieldTypedDefaultValue } from './forms';
-import { TQorusType } from './qorus';
+import { TQorusBaseType, TQorusType } from './qorus';
 
 /**
  * One argument of an expression, as `GET /system?action=expressions&context=ui`
@@ -11,6 +11,11 @@ export type TQorusExpressionSchemaArg = {
   /** The argument's type name as the server spells it (`softstring`, `list<string>`), without the `*` of an optional one. */
   name: string;
   ui_type: TQorusType;
+  /**
+   * The type of the value the argument takes, whatever its `ui_type` names: `string` for a `richtext` argument. Qorus
+   * sends it with every argument it describes.
+   */
+  base_type?: TQorusBaseType;
   /** The element type name of a `list<...>` argument. */
   element_type?: string;
   ui_element_type?: TQorusType;

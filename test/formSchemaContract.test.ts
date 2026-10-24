@@ -266,6 +266,35 @@ const VALID: ICase[] = [
     ].join('\n'),
   },
   {
+    // SystemRestClassV8::getUiType(): a field or an option of one of the
+    // DataProvider module's string format types is named by that type, and
+    // its value is text: `base_type` is the type of the value it holds.
+    name: 'fields of the string formats, with the base type of their values',
+    source: [
+      'const sf: IQorusFormSchema = {',
+      "  mail: { type: 'string', ui_type: 'email', base_type: 'string' },",
+      "  site: { type: 'string', ui_type: 'uri', base_type: 'string' },",
+      "  id: { type: 'string', ui_type: 'uuid', base_type: 'string' },",
+      "  host: { type: 'string', ui_type: 'hostname', base_type: 'string' },",
+      "  v4: { type: 'string', ui_type: 'ipv4', base_type: 'string' },",
+      "  v6: { type: 'string', ui_type: 'ipv6', base_type: 'string' },",
+      "  tel: { type: 'string', ui_type: 'phone', base_type: 'string' },",
+      "  callback: { type: 'uri', base_type: 'string' },",
+      '};',
+      "export const formats: TUiType[] = ['email', 'uri', 'uuid', 'hostname', 'ipv4', 'ipv6', 'phone'];",
+    ].join('\n'),
+  },
+  {
+    // A file is a hash, and a timeout an int.
+    name: 'a file and a timeout, with the base type of their values',
+    source: [
+      'const fb: IQorusFormSchema = {',
+      "  upload: { type: 'file', base_type: 'hash' },",
+      "  timeout: { type: 'int', base_type: 'int' },",
+      '};',
+    ].join('\n'),
+  },
+  {
     // reqraft's FormEngine takes `componentOverrides` keyed by ui_type and a
     // `rendererOnlyUiTypes` list: a consumer names its own editors, and
     // registers the names (see the header).
@@ -327,6 +356,12 @@ const INVALID: (ICase & { control: string })[] = [
       "const pz: IQorusFormSchema = { lang: { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 2 } };",
     control:
       "const pz: IQorusFormSchema = { lang: { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 'a two-letter language code, such as en' } };",
+  },
+  {
+    // A base type is the type of the value, never a UI type or a format.
+    name: 'a base type that is a string format',
+    source: "const bz: IQorusFormSchema = { site: { type: 'string', ui_type: 'uri', base_type: 'uri' } };",
+    control: "const bz: IQorusFormSchema = { site: { type: 'string', ui_type: 'uri', base_type: 'string' } };",
   },
   {
     // An object default that has a `type` is read as a typed default by the
@@ -439,6 +474,11 @@ const VALID_EXPRESSIONS: ICase[] = [
       '};',
     ].join('\n'),
   },
+  {
+    name: 'an argument with the base type of its value',
+    source:
+      "const ag: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'string' };",
+  },
 ];
 
 /** Expression entries that must not compile, each with a control as for form fields. */
@@ -467,6 +507,14 @@ const INVALID_EXPRESSIONS: (ICase & { control: string })[] = [
     name: 'a return type nothing knows',
     source: "const xd: IQorusExpressionSchema['return_type'] = 'not-a-qorus-type';",
     control: "const xd: IQorusExpressionSchema['return_type'] = 'list<auto>';",
+  },
+  {
+    // `richtext` is how the UI shows a string, not the type of the value.
+    name: 'an argument whose base type is a UI type',
+    source:
+      "const xg: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'richtext' };",
+    control:
+      "const xg: TQorusExpressionSchemaArg = { signature_type_code: 'any', name: 'softstring', ui_type: 'richtext', base_type: 'string' };",
   },
   {
     // Only a list or a hash carries an element type.
