@@ -493,6 +493,18 @@ const VALID_ACTION_OPTIONS: ICase[] = [
       '};',
     ].join('\n'),
   },
+  {
+    // How a TypeScript app declares its options (module-v8): `satisfies` refuses
+    // a property the option types do not declare.
+    name: "an app's options declared as they satisfy TQoreOptions",
+    source: [
+      "import type { TQoreOptions as TQo } from '../src';",
+      'export const appOptions = {',
+      "  webhook: { type: 'string', display_name: 'Webhook', validation_regex: '^https://',",
+      "    validation_regex_desc: 'an https address, such as https://hooks.example.com/abc' },",
+      '} satisfies TQo;',
+    ].join('\n'),
+  },
 ];
 
 /** Action options that must not compile, each with a control as for form fields. */
