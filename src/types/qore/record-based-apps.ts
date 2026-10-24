@@ -77,6 +77,7 @@ export type TExpressionArg = OmitFromUnion<
   | 'rest_get_allowed_values'
   | 'depends_on'
   | 'validation_regex'
+  | 'validation_regex_desc'
   | 'attr'
   | 'required_groups'
   | 'on_change'

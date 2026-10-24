@@ -253,6 +253,19 @@ const VALID: ICase[] = [
     ].join('\n'),
   },
   {
+    // QorusMapManager.qc MetaFieldInfo / FieldInfo: a field's pattern, with
+    // what it accepts in plain words (Qore DataProvider 3.11
+    // `ActionOptionBaseInfo::validation_regex_desc`), which a form shows as
+    // "Must be ..." when a value does not match.
+    name: 'a pattern with its description in plain words',
+    source: [
+      'const pa: IQorusFormSchema = {',
+      "  lang: { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 'a two-letter language code, such as en' },",
+      "  code: { type: 'string', validation_regex: '^[A-Z]+$' },",
+      '};',
+    ].join('\n'),
+  },
+  {
     // reqraft's FormEngine takes `componentOverrides` keyed by ui_type and a
     // `rendererOnlyUiTypes` list: a consumer names its own editors, and
     // registers the names (see the header).
@@ -306,6 +319,14 @@ const INVALID: (ICase & { control: string })[] = [
       "const dz: IQorusFormSchema = { version: { type: 'string', depends_on: [[['too', 'deep']]] } };",
     control:
       "const dz: IQorusFormSchema = { version: { type: 'string', depends_on: [['kind=workflow', 'kind=service']] } };",
+  },
+  {
+    // The description is words a person reads, never anything else.
+    name: 'a pattern description that is not text',
+    source:
+      "const pz: IQorusFormSchema = { lang: { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 2 } };",
+    control:
+      "const pz: IQorusFormSchema = { lang: { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 'a two-letter language code, such as en' } };",
   },
   {
     // An object default that has a `type` is read as a typed default by the
@@ -455,6 +476,57 @@ const INVALID_EXPRESSIONS: (ICase & { control: string })[] = [
   },
 ];
 
+/**
+ * Options of an app action as an app declares them, the shape Qore's
+ * `DataProvider::ActionOptionBaseInfo` carries (`IQoreAppActionBaseOption`).
+ */
+const VALID_ACTION_OPTIONS: ICase[] = [
+  {
+    // DataProvider 3.11 (Qore batch 6): the values a pattern accepts, in plain
+    // words written to complete "Must be ...", beside the pattern.
+    name: 'an option with a pattern and its description in plain words',
+    source: [
+      "import type { TQoreAppActionOption as TAoValid } from '../src';",
+      'const oa: TAoValid = {',
+      "  type: 'string', display_name: 'Language', validation_regex: '^[a-z]{2}$',",
+      "  validation_regex_desc: 'a two-letter language code, such as en',",
+      '};',
+    ].join('\n'),
+  },
+];
+
+/** Action options that must not compile, each with a control as for form fields. */
+const INVALID_ACTION_OPTIONS: (ICase & { control: string })[] = [
+  {
+    name: 'an option whose pattern description is not text',
+    source: [
+      "import type { TQoreAppActionOption as TAoInvalid } from '../src';",
+      "const oz: TAoInvalid = { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 2 };",
+    ].join('\n'),
+    control: [
+      "import type { TQoreAppActionOption as TAoInvalid } from '../src';",
+      "const oz: TAoInvalid = { type: 'string', validation_regex: '^[a-z]{2}$', validation_regex_desc: 'two letters, such as en' };",
+    ].join('\n'),
+  },
+];
+
+/**
+ * An expression argument takes no pattern (`TExpressionArg` leaves out
+ * `validation_regex`), so it takes no description of one either: an argument
+ * that carried one would say what a pattern accepts where there is none.
+ */
+const EXPRESSION_ARG_WITHOUT_PATTERN: ICase & { control: string } = {
+  name: 'an expression argument with a pattern description',
+  source: [
+    "import type { TExpressionArg as TEa } from '../src';",
+    "const ea: TEa = { type: 'string', type_code: 'any', validation_regex_desc: 'two letters, such as en' };",
+  ].join('\n'),
+  control: [
+    "import type { TExpressionArg as TEa } from '../src';",
+    "const ea: TEa = { type: 'string', type_code: 'any' };",
+  ].join('\n'),
+};
+
 const codes = (diagnostics: Record<string, IDiagnostic[]>) =>
   Object.fromEntries(Object.entries(diagnostics).map(([name, list]) => [name, list.map(({ code }) => code)]));
 
@@ -471,6 +543,31 @@ describe('the form schema contract', () => {
 
     expect(rejected).toEqual(Object.fromEntries(INVALID.map(({ name }) => [name, [2322]])));
     expect(controls).toEqual(Object.fromEntries(INVALID.map(({ name }) => [name, []])));
+  });
+});
+
+describe('the app action option contract', () => {
+  jest.setTimeout(60000);
+
+  it('accepts every option an app declares', () => {
+    expect(diagnose(VALID_ACTION_OPTIONS)).toEqual(
+      Object.fromEntries(VALID_ACTION_OPTIONS.map(({ name }) => [name, []])),
+    );
+  });
+
+  it('rejects each invalid option for the reason it is invalid', () => {
+    const rejected = codes(diagnose(INVALID_ACTION_OPTIONS));
+    const controls = diagnose(INVALID_ACTION_OPTIONS.map(({ name, control }) => ({ name, source: control })));
+
+    expect(rejected).toEqual(Object.fromEntries(INVALID_ACTION_OPTIONS.map(({ name }) => [name, [2322]])));
+    expect(controls).toEqual(Object.fromEntries(INVALID_ACTION_OPTIONS.map(({ name }) => [name, []])));
+  });
+
+  it('gives an expression argument no pattern description', () => {
+    const { name, source, control } = EXPRESSION_ARG_WITHOUT_PATTERN;
+    // an object literal may only specify known properties
+    expect(codes(diagnose([{ name, source }]))).toEqual({ [name]: [2322] });
+    expect(diagnose([{ name, source: control }])).toEqual({ [name]: [] });
   });
 });
 
