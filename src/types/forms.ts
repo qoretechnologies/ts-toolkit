@@ -5,6 +5,7 @@ import { IReqoreAutoFocusRules } from '@qoretechnologies/reqore/dist/hooks/useAu
 import { IReqoreIconName } from '@qoretechnologies/reqore/dist/types/icons';
 import type { DropzoneOptions } from 'react-dropzone';
 import { IQorusExpression, IQorusExpressionSchema } from './expressions';
+import { IQoreOptionCreateAction } from './qore/options';
 import { TQorusBaseType, TQorusCustomUIType, TQorusType } from './qorus';
 
 export type TQorusFormOperatorValue = string | string[] | undefined | null;
@@ -253,6 +254,15 @@ export type TQorusFormFieldDefaultValue = IQorusFormFieldTypedDefaultValue | TQo
  */
 export type TQorusFormFieldUIType = TQorusType | TQorusCustomUIType;
 
+/**
+ * A field's `metadata`. For an app action option it is the option's own
+ * `metadata` (`IQoreOptionMetadata`), which the server serves unchanged.
+ */
+export interface IQorusFormFieldMetadata extends Record<string, any> {
+  // the action of the same app that creates a new value for this field
+  create_action?: IQoreOptionCreateAction;
+}
+
 export interface IQorusFormFieldSchemaBase {
   /**
    * The type of the value the field holds, whatever its `type` and `ui_type` name: `string` for a field of a string
@@ -384,7 +394,7 @@ export interface IQorusFormFieldSchemaBase {
   hidden?: boolean;
 
   intent?: TReqoreIntent;
-  metadata?: Record<string, any>;
+  metadata?: IQorusFormFieldMetadata;
   rules?: ['valid_identifier'];
   tags?: IReqoreCollectionItemProps['tags'];
 

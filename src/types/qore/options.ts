@@ -136,6 +136,32 @@ export type TQoreOptionMessage = {
   intent: 'info' | 'warning' | 'success';
 };
 
+/**
+ * Names the action of the same app that creates a new value for an option, so a form can offer to create one
+ * instead of only picking from the values that exist (ex: the `channel` option of Slack's `send_message` names
+ * `create_channel`).
+ *
+ * The form runs the action with the connection the option form uses, then writes the response field named by
+ * `value_field` into the option. Both fields are paths into the action's response in dot notation.
+ */
+export interface IQoreOptionCreateAction {
+  // the action of the same app that creates the value (ex: 'create_channel')
+  action: string;
+  // the response field that becomes the option's value (ex: 'channel.id')
+  value_field: string;
+  // the response field that names the new value for the person who created it (ex: 'channel.name')
+  display_name_field?: string;
+}
+
+/**
+ * Data about an option that forms read; the server serves it unchanged as the option's `metadata`
+ */
+export interface IQoreOptionMetadata {
+  // the action that creates a new value for this option
+  create_action?: IQoreOptionCreateAction;
+  [key: string]: unknown;
+}
+
 export interface IQoreAppActionBaseOption<CustomConnOptions extends TCustomConnOptions> extends IQoreSharedObject {
   get_dependent_options?: TQoreGetDependentOptionsFunction;
   // Mutually-exclusive with 'get_allowed_values'
@@ -159,6 +185,7 @@ export interface IQoreAppActionBaseOption<CustomConnOptions extends TCustomConnO
   required_groups?: string[];
   on_change?: TQoreOptionOnChangeEvents[];
   get_dynamic_type?: TQoreGetDynamicTypeFunction<CustomConnOptions>;
+  metadata?: IQoreOptionMetadata;
 }
 
 export interface IQoreAppActionStringOption<CustomConnOptions extends TCustomConnOptions>
