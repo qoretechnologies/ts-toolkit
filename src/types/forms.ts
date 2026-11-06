@@ -5,7 +5,7 @@ import { IReqoreAutoFocusRules } from '@qoretechnologies/reqore/dist/hooks/useAu
 import { IReqoreIconName } from '@qoretechnologies/reqore/dist/types/icons';
 import type { DropzoneOptions } from 'react-dropzone';
 import { IQorusExpression, IQorusExpressionSchema } from './expressions';
-import { TQorusCustomUIType, TQorusType } from './qorus';
+import { TQorusBaseType, TQorusCustomUIType, TQorusType } from './qorus';
 
 export type TQorusFormOperatorValue = string | string[] | undefined | null;
 
@@ -254,6 +254,14 @@ export type TQorusFormFieldDefaultValue = IQorusFormFieldTypedDefaultValue | TQo
 export type TQorusFormFieldUIType = TQorusType | TQorusCustomUIType;
 
 export interface IQorusFormFieldSchemaBase {
+  /**
+   * The type of the value the field holds, whatever its `type` and `ui_type` name: `string` for a field of a string
+   * format such as `uri`, `hash` for a `file`, `int` for a timeout. Qorus sends it with every field and option it
+   * describes.
+   */
+  base_type?: TQorusBaseType;
+  /** The type of the values a list field's elements hold, as {@link base_type} is the field's. */
+  element_base_type?: TQorusBaseType;
   element_type?: TQorusType;
   ui_element_type?: string;
 
@@ -279,6 +287,23 @@ export interface IQorusFormFieldSchemaBase {
   allowed_schemes?: IQorusAllowedValue[];
   arg_schema?: IQorusFormSchema;
   multiselect?: boolean;
+
+  /**
+   * An optional regex pattern a text value must match (Qorus `MetaFieldInfo` /
+   * `FieldInfo` `validation_regex`); the form engines refuse a value that does
+   * not, and the server's own checks still decide what it stores.
+   */
+  validation_regex?: string;
+  /**
+   * An optional description in plain words of the values that
+   * {@link validation_regex} accepts, written to complete "Must be ...", for
+   * example `"a two-letter language code, such as en"`, so that a form can say
+   * why it refuses a value instead of saying that the value does not match the
+   * pattern. It describes the pattern only, and is not used for validation
+   * (Qore `DataProvider::ActionOptionBaseInfo::validation_regex_desc`,
+   * DataProvider 3.11).
+   */
+  validation_regex_desc?: string;
 
   supports_custom_values?: boolean;
   supports_templates?: boolean;
