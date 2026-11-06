@@ -1,5 +1,5 @@
 import type { IQorusAllowedValue, IQorusFormFieldTypedDefaultValue } from './forms';
-import { TQorusType } from './qorus';
+import { TQorusBaseType, TQorusType } from './qorus';
 
 /**
  * One argument of an expression, as `GET /system?action=expressions&context=ui`
@@ -11,6 +11,13 @@ export type TQorusExpressionSchemaArg = {
   /** The argument's type name as the server spells it (`softstring`, `list<string>`), without the `*` of an optional one. */
   name: string;
   ui_type: TQorusType;
+  /**
+   * The type of the value the argument takes, whatever its `ui_type` names: `string` for a `richtext` argument. Qorus
+   * sends it with every argument it describes.
+   */
+  base_type?: TQorusBaseType;
+  /** The type of the values a list argument's elements hold, as {@link base_type} is the argument's. */
+  element_base_type?: TQorusBaseType;
   /** The element type name of a `list<...>` argument. */
   element_type?: string;
   ui_element_type?: TQorusType;
@@ -73,6 +80,12 @@ export interface IQorusExpressionSchema {
   return_type_first_arg?: boolean;
   return_type_arg_priority?: string[];
   groups?: string[];
+  /**
+   * Never offered for picking; drawn only inside the construct that makes it: the item of a list wildcard
+   * (`wildcard_item`) is part of `@orders[*]`, not an operation of its own. An expression picker leaves it out
+   * (Qore DataProvider 3.11, `DataProviderExpressionBaseInfo.internal`; `false` for every other entry).
+   */
+  internal?: boolean;
 }
 
 export interface IQorusExpressionValue {
